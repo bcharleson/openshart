@@ -1,4 +1,4 @@
-# Engram Security Audit — Government/Military Hardening Assessment
+# OpenShart Security Audit — Government/Military Hardening Assessment
 
 **Date:** 2026-02-17
 **Auditor:** OpenClaw Security Analysis
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Engram is an encrypted memory framework for AI agents featuring Shamir's Secret Sharing, AES-256-GCM encryption, HMAC-based searchable encryption, hierarchical access control, and tamper-evident audit logging. The architecture is sound for commercial enterprise use (SOC2/HIPAA), but **falls far short of government/military requirements** (FedRAMP, FIPS 140-2/3, NIST 800-53, ITAR, TS/SCI).
+OpenShart is an encrypted memory framework for AI agents featuring Shamir's Secret Sharing, AES-256-GCM encryption, HMAC-based searchable encryption, hierarchical access control, and tamper-evident audit logging. The architecture is sound for commercial enterprise use (SOC2/HIPAA), but **falls far short of government/military requirements** (FedRAMP, FIPS 140-2/3, NIST 800-53, ITAR, TS/SCI).
 
 **Overall Rating: 6/10 for enterprise. 2/10 for government.**
 
@@ -54,7 +54,7 @@ Key gaps: no FIPS-validated crypto, no HSM integration, no key rotation, no clas
 4. **Buffer operations may leave residue** — `randomBytes(k-1)` for polynomial coefficients — the random buffer is not zeroed after use.
 5. **Max 255 shares** — GF(2^8) limitation. Acceptable for current use but limits future scalability.
 
-#### `src/core/engram.ts` — Main API
+#### `src/core/openshart.ts` — Main API
 
 **What's solid:**
 - Clean pipeline: PII detect → classify → fragment → encrypt → store → index → audit
@@ -194,11 +194,11 @@ Key gaps: no FIPS-validated crypto, no HSM integration, no key rotation, no clas
 
 | # | Finding | Severity | Module | Fix |
 |---|---------|----------|--------|-----|
-| 1 | **Access control not enforced in core API** | CRITICAL | `engram.ts` | Wire `AccessController.checkAccess()` into `recall()`, `search()`, `store()`. Reject unauthorized operations before decryption. |
+| 1 | **Access control not enforced in core API** | CRITICAL | `openshart.ts` | Wire `AccessController.checkAccess()` into `recall()`, `search()`, `store()`. Reject unauthorized operations before decryption. |
 | 2 | **SQL injection via schema interpolation** | CRITICAL | `postgres.ts` | Validate schema name against allowlist `[a-z_]+`. Use `pg-format` or prepared identifiers. |
-| 3 | **Master key in plain memory** | HIGH | `encrypt.ts`, `engram.ts` | Use `sodium.sodium_mlock()` or `mprotect()` via N-API to prevent swap. Implement secure key wrapper class that zeros on dealloc. |
+| 3 | **Master key in plain memory** | HIGH | `encrypt.ts`, `openshart.ts` | Use `sodium.sodium_mlock()` or `mprotect()` via N-API to prevent swap. Implement secure key wrapper class that zeros on dealloc. |
 | 4 | **Empty HKDF salt for search/tag keys** | HIGH | `encrypt.ts` | Use a proper random salt, stored alongside the instance configuration. Or use a fixed, unique, non-empty application salt. |
-| 5 | **Single overwrite pass for deletion** | HIGH | `engram.ts`, `gdpr.ts` | Implement 3-pass overwrite (DoD 5220.22-M) or use crypto-erase with key destruction. |
+| 5 | **Single overwrite pass for deletion** | HIGH | `openshart.ts`, `gdpr.ts` | Implement 3-pass overwrite (DoD 5220.22-M) or use crypto-erase with key destruction. |
 | 6 | **Grants/delegated keys lost on restart** | HIGH | `departments.ts`, `key-chain.ts` | Persist grants and delegated keys to the storage backend with encryption. |
 | 7 | **No share integrity verification** | MEDIUM | `shard.ts` | Add HMAC over each share before encryption, verify on reconstruction. |
 | 8 | **Audit chain loads all entries to verify** | MEDIUM | `chain.ts` | Implement Merkle tree or paginated verification with checkpoints. |
@@ -209,8 +209,8 @@ Key gaps: no FIPS-validated crypto, no HSM integration, no key rotation, no clas
 
 | # | Finding | Module | Fix |
 |---|---------|--------|-----|
-| 11 | Reconstructed plaintext cannot be zeroed (JS string immutability) | `engram.ts` | Return `Buffer` instead of `string`, zero after use. Document that callers must zero buffers. |
-| 12 | No rate limiting on operations | `engram.ts` | Add configurable rate limiter per agent/operation. |
+| 11 | Reconstructed plaintext cannot be zeroed (JS string immutability) | `openshart.ts` | Return `Buffer` instead of `string`, zero after use. Document that callers must zero buffers. |
+| 12 | No rate limiting on operations | `openshart.ts` | Add configurable rate limiter per agent/operation. |
 | 13 | PII detection results contain actual PII values | `detector.ts` | Redact values in detection results; store only type + position. |
 | 14 | No database connection encryption | `postgres.ts` | Require `sslmode=verify-full` by default. |
 | 15 | SOC2 CC8.1 hardcoded PASS | `soc2.ts` | Actually verify encryption by attempting to read raw fragment and confirming it's ciphertext. |
@@ -739,4 +739,4 @@ interface MACPolicy {
 
 ---
 
-*This audit was generated for Engram v0.1.0. Findings should be re-assessed after each implementation phase.*
+*This audit was generated for OpenShart v0.1.0. Findings should be re-assessed after each implementation phase.*

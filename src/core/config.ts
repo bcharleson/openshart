@@ -1,10 +1,10 @@
 /**
  * @module config
- * Configuration management with sensible defaults for Engram.
+ * Configuration management with sensible defaults for OpenShart.
  */
 
 import { PIILevel, Role, ROLE_CLEARANCE } from './types.js';
-import type { FragmentConfig, EngramOptions } from './types.js';
+import type { FragmentConfig, OpenShartOptions } from './types.js';
 
 /** Default fragment configuration by PII level */
 export const DEFAULT_FRAGMENT_CONFIG: Record<PIILevel, Required<FragmentConfig>> = {
@@ -50,26 +50,26 @@ export function resolveTTL(
   return DEFAULT_TTL[piiLevel];
 }
 
-/** Validate EngramOptions */
-export function validateOptions(options: EngramOptions): void {
+/** Validate OpenShartOptions */
+export function validateOptions(options: OpenShartOptions): void {
   if (!options.storage) {
-    throw new Error('Engram: storage backend is required');
+    throw new Error('OpenShart: storage backend is required');
   }
   if (!options.encryptionKey || options.encryptionKey.length !== 32) {
-    throw new Error('Engram: encryptionKey must be exactly 32 bytes (256 bits)');
+    throw new Error('OpenShart: encryptionKey must be exactly 32 bytes (256 bits)');
   }
 
   // P0 fix: Validate key entropy — reject obviously weak keys
   const key = options.encryptionKey;
   if (key.every(b => b === 0)) {
-    throw new Error('Engram: encryption key has zero entropy (all zeros)');
+    throw new Error('OpenShart: encryption key has zero entropy (all zeros)');
   }
   if (key.every(b => b === key[0])) {
-    throw new Error('Engram: encryption key has minimal entropy (all same byte)');
+    throw new Error('OpenShart: encryption key has minimal entropy (all same byte)');
   }
   const uniqueBytes = new Set(key).size;
   if (uniqueBytes < 8) {
-    throw new Error(`Engram: encryption key has insufficient entropy (only ${uniqueBytes} unique bytes)`);
+    throw new Error(`OpenShart: encryption key has insufficient entropy (only ${uniqueBytes} unique bytes)`);
   }
 }
 

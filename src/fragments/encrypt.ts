@@ -15,13 +15,13 @@ import { promisify } from 'node:util';
 const hkdfAsync = promisify(nodeHkdf);
 
 /** HKDF info prefix for fragment key derivation */
-const FRAGMENT_KEY_INFO_PREFIX = 'engram-fragment';
+const FRAGMENT_KEY_INFO_PREFIX = 'openshart-fragment';
 
 /** HKDF info prefix for search key derivation */
-const SEARCH_KEY_INFO = 'engram-search';
+const SEARCH_KEY_INFO = 'openshart-search';
 
 /** HKDF info prefix for tag encryption */
-const TAG_KEY_INFO = 'engram-tags';
+const TAG_KEY_INFO = 'openshart-tags';
 
 /** Derive a unique key for a specific fragment using HKDF-SHA256 */
 export async function deriveFragmentKey(
@@ -36,10 +36,10 @@ export async function deriveFragmentKey(
 }
 
 /** Fixed application salt for search key derivation (P0 fix: non-empty HKDF salt) */
-const SEARCH_KEY_SALT = Buffer.from('engram-search-key-salt-v1', 'utf-8');
+const SEARCH_KEY_SALT = Buffer.from('openshart-search-key-salt-v1', 'utf-8');
 
 /** Fixed application salt for tag key derivation (P0 fix: non-empty HKDF salt) */
-const TAG_KEY_SALT = Buffer.from('engram-tag-key-salt-v1', 'utf-8');
+const TAG_KEY_SALT = Buffer.from('openshart-tag-key-salt-v1', 'utf-8');
 
 /** Derive the search key from master key */
 export async function deriveSearchKey(masterKey: Buffer): Promise<Buffer> {
@@ -62,7 +62,7 @@ export async function deriveDepartmentKey(
     'sha256',
     masterKey,
     Buffer.from(department, 'utf-8'),
-    'engram-department',
+    'openshart-department',
     32,
   );
   return Buffer.from(derived);
@@ -78,7 +78,7 @@ export async function deriveHierarchyKey(
     'sha256',
     masterKey,
     Buffer.from(`${department}:${role}`, 'utf-8'),
-    'engram-hierarchy',
+    'openshart-hierarchy',
     32,
   );
   return Buffer.from(derived);

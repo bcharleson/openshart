@@ -1,9 +1,13 @@
 {
-  "name": "engram",
+  "name": "openshart",
   "version": "0.1.0",
-  "description": "Enterprise-grade encrypted memory framework for AI agents. Fragmented, encrypted, searchable — with hierarchical access control.",
+  "description": "Enterprise-grade encrypted agent memory. If it leaks, you're going to OpenShart yourself.",
   "type": "module",
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bcharleson/openshart.git"
+  },
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

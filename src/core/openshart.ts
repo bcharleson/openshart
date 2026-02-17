@@ -1,12 +1,12 @@
 /**
- * @module engram
- * Main Engram class — the public API for storing, searching, recalling, and forgetting memories.
+ * @module openshart
+ * Main OpenShart class — the public API for storing, searching, recalling, and forgetting memories.
  * Now with ChainLock, government classification, FIPS compliance, and security presets.
  */
 
 import { randomUUID, randomBytes } from 'node:crypto';
 import type {
-  EngramOptions,
+  OpenShartOptions,
   StorageBackend,
   StoreOptions,
   StoreResult,
@@ -45,7 +45,7 @@ import { enableFIPS, isFIPSEnabled, validateKeyEntropy } from '../crypto/fips.js
 export type SecurityLevel = 'standard' | 'enterprise' | 'government' | 'classified';
 
 /** Extended options with security presets */
-export interface EngramInitOptions extends EngramOptions {
+export interface OpenShartInitOptions extends OpenShartOptions {
   /** Security preset: 'standard' | 'enterprise' | 'government' | 'classified' */
   securityLevel?: SecurityLevel;
   /** ChainLock configuration (auto-enabled at 'government'+) */
@@ -67,28 +67,28 @@ export interface ClassifiedStoreOptions extends StoreOptions {
 }
 
 /**
- * Engram — the encrypted memory framework for AI agents.
+ * OpenShart — the encrypted memory framework for AI agents.
  *
  * @example
  * ```typescript
- * const engram = await Engram.init({
+ * const openshart = await OpenShart.init({
  *   storage: new MemoryBackend(),
  *   encryptionKey: randomBytes(32),
  *   securityLevel: 'government',
  * });
  *
- * await engram.store("Patient John Doe, SSN 123-45-6789", {
+ * await openshart.store("Patient John Doe, SSN 123-45-6789", {
  *   classification: Classification.SECRET,
  *   compartments: ['MEDICAL'],
  * });
  *
- * const memory = await engram.recall(id);
+ * const memory = await openshart.recall(id);
  * ```
  */
-export class Engram {
+export class OpenShart {
   private readonly storage: StorageBackend;
   private readonly encryptionKey: Buffer;
-  private readonly options: EngramInitOptions;
+  private readonly options: OpenShartInitOptions;
   private readonly securityLevel: SecurityLevel;
   private readonly chainLock: ChainLockProtocol;
   private readonly accessController: AccessController;
@@ -97,7 +97,7 @@ export class Engram {
   private searchIndex!: SearchIndex;
   private auditLogger!: AuditLogger;
 
-  private constructor(options: EngramInitOptions) {
+  private constructor(options: OpenShartInitOptions) {
     this.storage = options.storage;
     this.encryptionKey = options.encryptionKey;
     this.options = options;
@@ -117,9 +117,9 @@ export class Engram {
   }
 
   /**
-   * Initialize an Engram instance with security presets.
+   * Initialize an OpenShart instance with security presets.
    */
-  static async init(options: EngramInitOptions): Promise<Engram> {
+  static async init(options: OpenShartInitOptions): Promise<OpenShart> {
     validateOptions(options);
 
     const level = options.securityLevel ?? 'standard';
@@ -134,7 +134,7 @@ export class Engram {
       validateKeyEntropy(options.encryptionKey);
     }
 
-    const instance = new Engram(options);
+    const instance = new OpenShart(options);
 
     // Derive search key from master key
     const searchKey = await deriveSearchKey(options.encryptionKey);
@@ -163,7 +163,7 @@ export class Engram {
         options.classification,
       );
       if (!writeCheck.allowed) {
-        throw new EngramAccessDeniedError(writeCheck.reason);
+        throw new OpenShartAccessDeniedError(writeCheck.reason);
       }
     }
 
@@ -303,12 +303,12 @@ export class Engram {
   async recall(id: MemoryId): Promise<Memory> {
     const meta = await this.storage.getMeta(id);
     if (!meta) {
-      throw new EngramNotFoundError(id);
+      throw new OpenShartNotFoundError(id);
     }
 
     // Check expiry
     if (meta.expiresAt && new Date(meta.expiresAt) < new Date()) {
-      throw new EngramExpiredError(id);
+      throw new OpenShartExpiredError(id);
     }
 
     // P0 fix: Enforce access control
@@ -325,14 +325,14 @@ export class Engram {
           id,
           { denied: true, reason: decision.reason },
         );
-        throw new EngramAccessDeniedError(decision.reason);
+        throw new OpenShartAccessDeniedError(decision.reason);
       }
     }
 
     // Fetch fragments
     const fragments = await this.storage.getFragments(id);
     if (fragments.length < meta.threshold) {
-      throw new EngramReconstructionError(id, fragments.length, meta.threshold);
+      throw new OpenShartReconstructionError(id, fragments.length, meta.threshold);
     }
 
     let content: string;
@@ -379,7 +379,7 @@ export class Engram {
   async forget(id: MemoryId): Promise<ForgetResult> {
     const meta = await this.storage.getMeta(id);
     if (!meta) {
-      throw new EngramNotFoundError(id);
+      throw new OpenShartNotFoundError(id);
     }
 
     const fragments = await this.storage.getFragments(id);
@@ -489,34 +489,34 @@ export class Engram {
 
 // ─── Error Classes ────────────────────────────────────────────
 
-export class EngramNotFoundError extends Error {
+export class OpenShartNotFoundError extends Error {
   constructor(public readonly memoryId: MemoryId) {
     super(`Memory not found: ${memoryId}`);
-    this.name = 'EngramNotFoundError';
+    this.name = 'OpenShartNotFoundError';
   }
 }
 
-export class EngramExpiredError extends Error {
+export class OpenShartExpiredError extends Error {
   constructor(public readonly memoryId: MemoryId) {
     super(`Memory has expired: ${memoryId}`);
-    this.name = 'EngramExpiredError';
+    this.name = 'OpenShartExpiredError';
   }
 }
 
-export class EngramReconstructionError extends Error {
+export class OpenShartReconstructionError extends Error {
   constructor(
     public readonly memoryId: MemoryId,
     public readonly available: number,
     public readonly required: number,
   ) {
     super(`Insufficient fragments for ${memoryId}: ${available} available, ${required} required`);
-    this.name = 'EngramReconstructionError';
+    this.name = 'OpenShartReconstructionError';
   }
 }
 
-export class EngramAccessDeniedError extends Error {
+export class OpenShartAccessDeniedError extends Error {
   constructor(reason: string) {
     super(`Access denied: ${reason}`);
-    this.name = 'EngramAccessDeniedError';
+    this.name = 'OpenShartAccessDeniedError';
   }
 }

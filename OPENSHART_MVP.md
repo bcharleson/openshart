@@ -1,10 +1,10 @@
-# Engram — MVP Specification
+# OpenShart — MVP Specification
 
 > **The secure memory layer for AI agents.**
 > Fragmented, encrypted, searchable — enterprise-grade context security for PII, business intelligence, and agent cognition.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![npm](https://img.shields.io/npm/v/engram)](https://www.npmjs.com/package/engram)
+[![npm](https://img.shields.io/npm/v/openshart)](https://www.npmjs.com/package/openshart)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 
 ---
@@ -36,7 +36,7 @@
 
 AI agents accumulate context — conversations, user preferences, business data, PII. Today that context is stored in plaintext vector databases or ephemeral chat histories. This is a liability.
 
-**Engram** treats agent memory the way biological brains treat human memory: fragmented, distributed, and reconstructable only by the entity that created it. No single storage location holds a complete memory. No database breach reveals usable data. No admin can read agent context without the agent's key.
+**OpenShart** treats agent memory the way biological brains treat human memory: fragmented, distributed, and reconstructable only by the entity that created it. No single storage location holds a complete memory. No database breach reveals usable data. No admin can read agent context without the agent's key.
 
 ### Design Principles
 
@@ -58,7 +58,7 @@ AI agents accumulate context — conversations, user preferences, business data,
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         ENGRAM SDK                                  │
+│                         OPENSHART SDK                                  │
 │                                                                     │
 │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐       │
 │  │   STORE   │  │  SEARCH   │  │  RECALL   │  │  FORGET   │       │
@@ -150,7 +150,7 @@ AI agents accumulate context — conversations, user preferences, business data,
 
 ### 1. STORE
 
-Agent writes a memory. Engram:
+Agent writes a memory. OpenShart:
 1. Scans content for PII → auto-classifies sensitivity level
 2. Generates search tokens (HMAC-based) from content keywords and provided tags
 3. Splits plaintext into N shares via Shamir's Secret Sharing
@@ -161,7 +161,7 @@ Agent writes a memory. Engram:
 
 ### 2. SEARCH
 
-Agent queries memories. Engram:
+Agent queries memories. OpenShart:
 1. Generates HMAC search token from query
 2. Looks up matching fragment IDs in the encrypted search index — **content is never decrypted during search**
 3. Returns metadata (memory ID, tags, timestamp, PII level) without content
@@ -169,7 +169,7 @@ Agent queries memories. Engram:
 
 ### 3. RECALL
 
-Agent retrieves a specific memory. Engram:
+Agent retrieves a specific memory. OpenShart:
 1. Fetches K-of-N fragments from storage
 2. Decrypts each fragment with derived keys
 3. Reassembles original content via Shamir reconstruction
@@ -178,7 +178,7 @@ Agent retrieves a specific memory. Engram:
 
 ### 4. FORGET
 
-Agent (or compliance process) deletes a memory. Engram:
+Agent (or compliance process) deletes a memory. OpenShart:
 1. Identifies all N fragments for the memory
 2. Cryptographically destroys each fragment (overwrite + delete)
 3. Purges all search index entries referencing the memory
@@ -207,7 +207,7 @@ This is **GDPR Article 17 compliant** by design — deletion is cryptographic, v
 ### Dependencies (minimal)
 
 ```
-engram
+openshart
 ├── better-sqlite3     # SQLite backend (optional peer dep)
 ├── pg                 # Postgres backend (optional peer dep)
 └── (no other runtime dependencies)
@@ -352,8 +352,8 @@ export interface StorageBackend {
   close(): Promise<void>;
 }
 
-/** Engram initialization options */
-export interface EngramOptions {
+/** OpenShart initialization options */
+export interface OpenShartOptions {
   /** Storage backend instance */
   storage: StorageBackend;
   /**
@@ -483,27 +483,27 @@ export interface ForgetResult {
 ### Initialization
 
 ```typescript
-import { Engram, SQLiteBackend } from 'engram';
+import { OpenShart, SQLiteBackend } from 'openshart';
 import { randomBytes } from 'node:crypto';
 
 // Generate a new key (store this securely — loss = permanent data loss)
 const key = randomBytes(32);
 
 // Or load from secure storage
-// const key = Buffer.from(process.env.ENGRAM_KEY!, 'hex');
+// const key = Buffer.from(process.env.OPENSHART_KEY!, 'hex');
 
-const engram = await Engram.init({
+const openshart = await OpenShart.init({
   storage: new SQLiteBackend({ path: './agent-memory.db' }),
   encryptionKey: key,
 });
 ```
 
-### engram.store(content, options?)
+### openshart.store(content, options?)
 
 Store a memory. Content is PII-scanned, fragmented, encrypted, indexed, and audited.
 
 ```typescript
-const result = await engram.store(
+const result = await openshart.store(
   'Customer John Smith (john.smith@acme.com) approved $150k budget for Q3',
   {
     tags: ['customer', 'budget', 'acme'],
@@ -522,12 +522,12 @@ console.log(result);
 // }
 ```
 
-### engram.search(query, options?)
+### openshart.search(query, options?)
 
 Search memories without decrypting content. Returns metadata only.
 
 ```typescript
-const results = await engram.search('budget approval', {
+const results = await openshart.search('budget approval', {
   tags: ['customer'],
   limit: 5,
 });
@@ -550,12 +550,12 @@ console.log(results);
 // }
 ```
 
-### engram.recall(memoryId)
+### openshart.recall(memoryId)
 
 Retrieve and reconstruct a specific memory. Plaintext exists only in-memory.
 
 ```typescript
-const memory = await engram.recall(results.memories[0].id);
+const memory = await openshart.recall(results.memories[0].id);
 
 console.log(memory.content);
 // 'Customer John Smith (john.smith@acme.com) approved $150k budget for Q3'
@@ -564,12 +564,12 @@ console.log(memory.content);
 // It is never written to disk during recall
 ```
 
-### engram.forget(memoryId)
+### openshart.forget(memoryId)
 
 Cryptographically destroy a memory. All fragments, search tokens, and metadata are purged.
 
 ```typescript
-const forgetResult = await engram.forget(results.memories[0].id);
+const forgetResult = await openshart.forget(results.memories[0].id);
 
 console.log(forgetResult);
 // {
@@ -580,15 +580,15 @@ console.log(forgetResult);
 // }
 
 // Attempting to recall a forgotten memory throws
-await engram.recall(forgetResult.memoryId); // throws EngramNotFoundError
+await openshart.recall(forgetResult.memoryId); // throws OpenShartNotFoundError
 ```
 
-### engram.list(filters?)
+### openshart.list(filters?)
 
 List memory metadata. Never returns content.
 
 ```typescript
-const metas = await engram.list({
+const metas = await openshart.list({
   tags: ['customer'],
   piiLevel: PIILevel.CRITICAL,
   after: new Date('2026-01-01'),
@@ -596,24 +596,24 @@ const metas = await engram.list({
 });
 ```
 
-### engram.export(filters?)
+### openshart.export(filters?)
 
 Export audit log for compliance reporting.
 
 ```typescript
-const auditLog = await engram.export({
+const auditLog = await openshart.export({
   operation: AuditOperation.FORGET,
   after: new Date('2026-01-01'),
 });
 // Returns AuditEntry[] for compliance/legal teams
 ```
 
-### engram.close()
+### openshart.close()
 
 Gracefully close storage connections.
 
 ```typescript
-await engram.close();
+await openshart.close();
 ```
 
 ---
@@ -690,7 +690,7 @@ const BUILTIN_PATTERNS: PIIPattern[] = [
 ### Custom PII Patterns
 
 ```typescript
-const engram = await Engram.init({
+const openshart = await OpenShart.init({
   storage: new SQLiteBackend(),
   encryptionKey: key,
   pii: {
@@ -716,7 +716,7 @@ const engram = await Engram.init({
 
 ### Shamir's Secret Sharing
 
-Engram uses Shamir's Secret Sharing (SSS) over GF(2^8) to split memory content into N shares where any K shares can reconstruct the original.
+OpenShart uses Shamir's Secret Sharing (SSS) over GF(2^8) to split memory content into N shares where any K shares can reconstruct the original.
 
 ```
 Original: "Hello World"  (K=3, N=5)
@@ -749,7 +749,7 @@ function encryptFragment(share: Buffer, masterKey: Buffer, memoryId: string, ind
   // Derive unique key for this fragment via HKDF
   const fragmentKey = hkdf(masterKey, {
     salt: memoryId,
-    info: `engram-fragment-${index}`,
+    info: `openshart-fragment-${index}`,
     length: 32,
   });
 
@@ -789,7 +789,7 @@ Memory mem_abc123 (CRITICAL → 5-of-8)
 
 ### HMAC-Based Search Tokens
 
-Engram implements a simplified Searchable Symmetric Encryption (SSE) scheme using HMAC-SHA256 tokens.
+OpenShart implements a simplified Searchable Symmetric Encryption (SSE) scheme using HMAC-SHA256 tokens.
 
 ```
 Search query: "budget approval"
@@ -805,7 +805,7 @@ Search query: "budget approval"
 │  HMAC Token Generation       │
 │                              │
 │  searchKey = HKDF(master,    │
-│    info="engram-search")     │
+│    info="openshart-search")     │
 │                              │
 │  token("budget") =           │
 │    HMAC-SHA256(searchKey,    │
@@ -832,7 +832,7 @@ Search query: "budget approval"
 
 ### Token Generation at Store Time
 
-When a memory is stored, Engram:
+When a memory is stored, OpenShart:
 1. Tokenizes the content (word-level + n-grams)
 2. Generates HMAC tokens for each search term
 3. Generates HMAC tokens for each tag
@@ -876,10 +876,10 @@ Any storage backend implements the `StorageBackend` interface (defined above in 
 Zero-config local storage. Perfect for development, single-agent deployments, and CLI tools.
 
 ```typescript
-import { SQLiteBackend } from 'engram';
+import { SQLiteBackend } from 'openshart';
 
 const storage = new SQLiteBackend({
-  /** Database file path. Default: './engram.db' */
+  /** Database file path. Default: './openshart.db' */
   path: './agent-memory.db',
   /** Enable WAL mode for better concurrency. Default: true */
   wal: true,
@@ -943,14 +943,14 @@ CREATE INDEX idx_audit_ts ON audit_log(timestamp);
 Production backend with connection pooling.
 
 ```typescript
-import { PostgresBackend } from 'engram/backends/postgres';
+import { PostgresBackend } from 'openshart/backends/postgres';
 
 const storage = new PostgresBackend({
   connectionString: process.env.DATABASE_URL!,
   /** Connection pool size. Default: 10 */
   poolSize: 10,
-  /** Schema name. Default: 'engram' */
-  schema: 'engram',
+  /** Schema name. Default: 'openshart' */
+  schema: 'openshart',
   /** Run migrations on init. Default: true */
   autoMigrate: true,
 });
@@ -961,7 +961,7 @@ const storage = new PostgresBackend({
 In-memory only — perfect for unit tests.
 
 ```typescript
-import { MemoryBackend } from 'engram';
+import { MemoryBackend } from 'openshart';
 
 const storage = new MemoryBackend();
 // All data lost when process exits
@@ -1008,14 +1008,14 @@ Audit entries **do** contain:
 
 ```typescript
 // Export all FORGET operations for GDPR compliance reporting
-const deletions = await engram.export({
+const deletions = await openshart.export({
   operation: AuditOperation.FORGET,
   after: new Date('2026-01-01'),
   before: new Date('2026-03-01'),
 });
 
 // Verify chain integrity
-const isValid = await engram.verifyAuditChain();
+const isValid = await openshart.verifyAuditChain();
 // true if no entries have been tampered with
 ```
 
@@ -1026,44 +1026,44 @@ const isValid = await engram.verifyAuditChain();
 ### OpenClaw Memory Provider
 
 ```typescript
-// openclaw-engram-provider.ts
-import { Engram, SQLiteBackend } from 'engram';
+// openclaw-openshart-provider.ts
+import { OpenShart, SQLiteBackend } from 'openshart';
 import type { MemoryProvider } from 'openclaw/plugin-sdk';
 
-export class EngramMemoryProvider implements MemoryProvider {
-  private engram: Engram;
+export class OpenShartMemoryProvider implements MemoryProvider {
+  private openshart: OpenShart;
 
   async init(config: Record<string, unknown>) {
-    this.engram = await Engram.init({
+    this.openshart = await OpenShart.init({
       storage: new SQLiteBackend({ path: config.dbPath as string }),
       encryptionKey: Buffer.from(config.encryptionKey as string, 'hex'),
     });
   }
 
   async store(content: string, metadata?: Record<string, unknown>) {
-    const result = await this.engram.store(content, {
+    const result = await this.openshart.store(content, {
       tags: metadata?.tags as string[],
     });
     return result.id;
   }
 
   async search(query: string, limit = 10) {
-    const results = await this.engram.search(query, { limit });
+    const results = await this.openshart.search(query, { limit });
     // Recall content for top results
     return Promise.all(
       results.memories.map(async (meta) => {
-        const memory = await this.engram.recall(meta.id);
+        const memory = await this.openshart.recall(meta.id);
         return { id: meta.id, content: memory.content, score: 1.0 };
       })
     );
   }
 
   async forget(id: string) {
-    await this.engram.forget(id as any);
+    await this.openshart.forget(id as any);
   }
 
   async close() {
-    await this.engram.close();
+    await this.openshart.close();
   }
 }
 ```
@@ -1071,17 +1071,17 @@ export class EngramMemoryProvider implements MemoryProvider {
 ### LangChain.js Memory Class
 
 ```typescript
-// langchain-engram.ts
-import { Engram, SQLiteBackend } from 'engram';
+// langchain-openshart.ts
+import { OpenShart, SQLiteBackend } from 'openshart';
 import { BaseMemory, InputValues, OutputValues } from '@langchain/core/memory';
 
-export class EngramMemory extends BaseMemory {
-  private engram: Engram;
+export class OpenShartMemory extends BaseMemory {
+  private openshart: OpenShart;
   memoryKey = 'history';
 
-  constructor(engram: Engram) {
+  constructor(openshart: OpenShart) {
     super();
-    this.engram = engram;
+    this.openshart = openshart;
   }
 
   get memoryKeys(): string[] {
@@ -1090,10 +1090,10 @@ export class EngramMemory extends BaseMemory {
 
   async loadMemoryVariables(values: InputValues): Promise<Record<string, string>> {
     const query = values.input || values.question || '';
-    const results = await this.engram.search(String(query), { limit: 5 });
+    const results = await this.openshart.search(String(query), { limit: 5 });
 
     const memories = await Promise.all(
-      results.memories.map((m) => this.engram.recall(m.id))
+      results.memories.map((m) => this.openshart.recall(m.id))
     );
 
     return {
@@ -1103,12 +1103,12 @@ export class EngramMemory extends BaseMemory {
 
   async saveContext(input: InputValues, output: OutputValues): Promise<void> {
     const text = `Human: ${input.input}\nAI: ${output.output}`;
-    await this.engram.store(text, { tags: ['conversation'] });
+    await this.openshart.store(text, { tags: ['conversation'] });
   }
 
   async clear(): Promise<void> {
-    const all = await this.engram.list({ tags: ['conversation'] });
-    await Promise.all(all.map((m) => this.engram.forget(m.id)));
+    const all = await this.openshart.list({ tags: ['conversation'] });
+    await Promise.all(all.map((m) => this.openshart.forget(m.id)));
   }
 }
 
@@ -1116,91 +1116,91 @@ export class EngramMemory extends BaseMemory {
 import { ChatOpenAI } from '@langchain/openai';
 import { ConversationChain } from 'langchain/chains';
 
-const engram = await Engram.init({
+const openshart = await OpenShart.init({
   storage: new SQLiteBackend(),
-  encryptionKey: Buffer.from(process.env.ENGRAM_KEY!, 'hex'),
+  encryptionKey: Buffer.from(process.env.OPENSHART_KEY!, 'hex'),
 });
 
 const chain = new ConversationChain({
   llm: new ChatOpenAI(),
-  memory: new EngramMemory(engram),
+  memory: new OpenShartMemory(openshart),
 });
 ```
 
 ### Standalone Usage
 
 ```typescript
-import { Engram, SQLiteBackend } from 'engram';
+import { OpenShart, SQLiteBackend } from 'openshart';
 import { randomBytes } from 'node:crypto';
 
-const engram = await Engram.init({
+const openshart = await OpenShart.init({
   storage: new SQLiteBackend({ path: './my-agent.db' }),
   encryptionKey: randomBytes(32),
 });
 
 // Store user context securely
-await engram.store('User prefers dark mode and metric units', {
+await openshart.store('User prefers dark mode and metric units', {
   tags: ['preferences', 'ui'],
 });
 
-await engram.store('Meeting with Jane (jane@partner.com) on March 5th about API integration', {
+await openshart.store('Meeting with Jane (jane@partner.com) on March 5th about API integration', {
   tags: ['meeting', 'partner'],
 });
 
 // Search without decrypting
-const results = await engram.search('API integration');
+const results = await openshart.search('API integration');
 
 // Recall when needed
 if (results.memories.length > 0) {
-  const memory = await engram.recall(results.memories[0].id);
+  const memory = await openshart.recall(results.memories[0].id);
   console.log(memory.content);
 }
 
 // Clean up
-await engram.close();
+await openshart.close();
 ```
 
 ### Express Middleware for Agent APIs
 
 ```typescript
 import express from 'express';
-import { Engram, SQLiteBackend } from 'engram';
+import { OpenShart, SQLiteBackend } from 'openshart';
 
 const app = express();
 app.use(express.json());
 
-let engram: Engram;
+let openshart: OpenShart;
 
 app.use(async (req, res, next) => {
-  if (!engram) {
-    engram = await Engram.init({
+  if (!openshart) {
+    openshart = await OpenShart.init({
       storage: new SQLiteBackend({ path: './api-memory.db' }),
-      encryptionKey: Buffer.from(process.env.ENGRAM_KEY!, 'hex'),
+      encryptionKey: Buffer.from(process.env.OPENSHART_KEY!, 'hex'),
     });
   }
-  req.engram = engram;
+  req.openshart = openshart;
   next();
 });
 
 app.post('/memory', async (req, res) => {
   const { content, tags } = req.body;
-  const result = await req.engram.store(content, { tags });
+  const result = await req.openshart.store(content, { tags });
   res.json(result);
 });
 
 app.get('/memory/search', async (req, res) => {
   const { q, limit } = req.query;
-  const results = await req.engram.search(String(q), { limit: Number(limit) || 10 });
+  const results = await req.openshart.search(String(q), { limit: Number(limit) || 10 });
   res.json(results);
 });
 
 app.get('/memory/:id', async (req, res) => {
-  const memory = await req.engram.recall(req.params.id as any);
+  const memory = await req.openshart.recall(req.params.id as any);
   res.json(memory);
 });
 
 app.delete('/memory/:id', async (req, res) => {
-  const result = await req.engram.forget(req.params.id as any);
+  const result = await req.openshart.forget(req.params.id as any);
   res.json(result);
 });
 
@@ -1212,7 +1212,7 @@ app.listen(3000);
 ## Repository Structure
 
 ```
-engram/
+openshart/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                  # Lint, test, build on PR
@@ -1224,7 +1224,7 @@ engram/
 │   └── pull_request_template.md
 ├── src/
 │   ├── index.ts                    # Public API exports
-│   ├── engram.ts                   # Core Engram class
+│   ├── openshart.ts                   # Core OpenShart class
 │   ├── types.ts                    # All TypeScript interfaces/enums
 │   ├── crypto/
 │   │   ├── aes.ts                  # AES-256-GCM encrypt/decrypt
@@ -1252,7 +1252,7 @@ engram/
 │   │   └── memory.ts             # In-memory backend
 │   └── errors.ts                  # Custom error classes
 ├── test/
-│   ├── engram.test.ts             # Core API tests
+│   ├── openshart.test.ts             # Core API tests
 │   ├── crypto/
 │   │   ├── aes.test.ts
 │   │   ├── shamir.test.ts
@@ -1290,7 +1290,7 @@ engram/
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── SECURITY.md                    # Security policy + responsible disclosure
-└── ENGRAM_MVP.md                  # This document
+└── OPENSHART_MVP.md                  # This document
 ```
 
 ---
@@ -1300,7 +1300,7 @@ engram/
 ### Install
 
 ```bash
-npm install engram
+npm install openshart
 ```
 
 ### Generate an Encryption Key
@@ -1313,27 +1313,27 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ### Basic Usage
 
 ```typescript
-import { Engram, SQLiteBackend } from 'engram';
+import { OpenShart, SQLiteBackend } from 'openshart';
 
-const engram = await Engram.init({
+const openshart = await OpenShart.init({
   storage: new SQLiteBackend(),
-  encryptionKey: Buffer.from(process.env.ENGRAM_KEY!, 'hex'),
+  encryptionKey: Buffer.from(process.env.OPENSHART_KEY!, 'hex'),
 });
 
 // Store
-const { id } = await engram.store('Remember: user likes dark mode');
+const { id } = await openshart.store('Remember: user likes dark mode');
 
 // Search
-const results = await engram.search('dark mode');
+const results = await openshart.search('dark mode');
 
 // Recall
-const memory = await engram.recall(id);
+const memory = await openshart.recall(id);
 console.log(memory.content); // "Remember: user likes dark mode"
 
 // Forget
-await engram.forget(id);
+await openshart.forget(id);
 
-await engram.close();
+await openshart.close();
 ```
 
 ---
@@ -1352,7 +1352,7 @@ await engram.close();
 | Key compromise | Per-fragment derived keys via HKDF. Key rotation supported (re-encrypt all). |
 | Memory not actually deleted | FORGET overwrites fragment data before deletion + purges search index. |
 
-### What Engram Does NOT Protect Against (MVP)
+### What OpenShart Does NOT Protect Against (MVP)
 
 - **Key exfiltration from the agent process** — if the agent's memory space is compromised, the master key is exposed. (Addressed in v0.3 with TPM/Secure Enclave binding.)
 - **Access pattern analysis** — an observer can see *when* and *how often* memories are accessed. (Addressed in v0.3 with ORAM.)
@@ -1362,14 +1362,14 @@ await engram.close();
 
 ```typescript
 // RECOMMENDED: Environment variable
-const key = Buffer.from(process.env.ENGRAM_KEY!, 'hex');
+const key = Buffer.from(process.env.OPENSHART_KEY!, 'hex');
 
 // RECOMMENDED: Hardware security module (future)
-// const key = await hsm.getKey('engram-master');
+// const key = await hsm.getKey('openshart-master');
 
 // ACCEPTABLE: File-based (restricted permissions)
-// const key = readFileSync('/etc/engram/master.key');
-// chmod 600 /etc/engram/master.key
+// const key = readFileSync('/etc/openshart/master.key');
+// chmod 600 /etc/openshart/master.key
 
 // NEVER: Hardcoded in source
 // const key = Buffer.from('abc123...'); // DO NOT DO THIS
@@ -1381,7 +1381,7 @@ const key = Buffer.from(process.env.ENGRAM_KEY!, 'hex');
 
 ### GDPR Article 17 — Right to Erasure
 
-`engram.forget()` provides cryptographic erasure:
+`openshart.forget()` provides cryptographic erasure:
 
 1. All N fragments overwritten with random data, then deleted
 2. All search index entries referencing the memory are purged
@@ -1393,13 +1393,13 @@ const key = Buffer.from(process.env.ENGRAM_KEY!, 'hex');
 
 ```typescript
 // Generate compliance report
-const report = await engram.export({
+const report = await openshart.export({
   after: new Date('2026-01-01'),
   before: new Date('2026-04-01'),
 });
 
 // Verify no tampering
-const chainValid = await engram.verifyAuditChain();
+const chainValid = await openshart.verifyAuditChain();
 
 // Report includes:
 // - Every STORE (what PII level, when, fragment count — never content)
@@ -1434,7 +1434,7 @@ Storage backends determine data residency. With SQLiteBackend, data stays on the
 - [ ] Audit dashboard (web UI for compliance teams)
 - [ ] Memory TTL enforcement (background expiry)
 - [ ] Bulk operations (store/forget many)
-- [ ] CLI tool (`npx engram store "..."`, `npx engram search "..."`)
+- [ ] CLI tool (`npx openshart store "..."`, `npx openshart search "..."`)
 
 ### v0.3 — +4 weeks
 - [ ] Hardware key binding (TPM 2.0 / macOS Secure Enclave / Android Keystore)
@@ -1453,7 +1453,7 @@ Storage backends determine data residency. With SQLiteBackend, data stays on the
 ### v1.0 — Enterprise
 - [ ] SSO integration (SAML, OIDC) for key management
 - [ ] Compliance dashboards (GDPR, HIPAA, SOC 2)
-- [ ] Managed cloud offering (Engram Cloud)
+- [ ] Managed cloud offering (OpenShart Cloud)
 - [ ] SDK for Python, Go, Rust
 - [ ] Formal security audit by third party
 - [ ] SOC 2 Type II certification
@@ -1465,8 +1465,8 @@ Storage backends determine data residency. With SQLiteBackend, data stays on the
 ### Development Setup
 
 ```bash
-git clone https://github.com/anthropic/engram.git
-cd engram
+git clone https://github.com/anthropic/openshart.git
+cd openshart
 npm install
 npm test
 ```
@@ -1498,7 +1498,7 @@ npm run bench
 
 ### Security Issues
 
-**Do not open a public issue for security vulnerabilities.** Email security@engram.dev with details. See [SECURITY.md](SECURITY.md).
+**Do not open a public issue for security vulnerabilities.** Email security@openshart.dev with details. See [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -1508,4 +1508,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Engram: because agent memory should be as secure as human memory is private.*
+*OpenShart: because agent memory should be as secure as human memory is private.*

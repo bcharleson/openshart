@@ -1,6 +1,6 @@
 /**
  * @module types
- * Core type definitions for Engram — the encrypted memory framework for AI agents.
+ * Core type definitions for OpenShart — the encrypted memory framework for AI agents.
  */
 
 // ─── Branded ID Types ─────────────────────────────────────────
@@ -146,8 +146,8 @@ export interface AuditConfig {
   maxEntries?: number;
 }
 
-/** Engram initialization options */
-export interface EngramOptions {
+/** OpenShart initialization options */
+export interface OpenShartOptions {
   storage: StorageBackend;
   encryptionKey: Buffer;
   fragment?: FragmentConfig;

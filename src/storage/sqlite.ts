@@ -17,7 +17,7 @@ import type {
 import { PIILevel, memoryId } from '../core/types.js';
 
 export interface SQLiteOptions {
-  /** Database file path. Default: './engram.db' */
+  /** Database file path. Default: './openshart.db' */
   path?: string;
   /** Enable WAL mode. Default: true */
   wal?: boolean;
@@ -35,7 +35,7 @@ export class SQLiteBackend implements StorageBackend {
 
   constructor(options: SQLiteOptions = {}) {
     this.options = {
-      path: options.path ?? './engram.db',
+      path: options.path ?? './openshart.db',
       wal: options.wal ?? true,
       optimize: options.optimize ?? true,
     };

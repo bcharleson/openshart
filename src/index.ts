@@ -1,24 +1,24 @@
 /**
- * Engram — Enterprise-grade encrypted memory framework for AI agents.
+ * OpenShart — Enterprise-grade encrypted memory framework for AI agents.
  *
  * @packageDocumentation
  */
 
 // Core
 export {
-  Engram,
-  EngramNotFoundError,
-  EngramExpiredError,
-  EngramReconstructionError,
-  EngramAccessDeniedError,
-} from './core/engram.js';
+  OpenShart,
+  OpenShartNotFoundError,
+  OpenShartExpiredError,
+  OpenShartReconstructionError,
+  OpenShartAccessDeniedError,
+} from './core/openshart.js';
 export type {
   SecurityLevel,
-  EngramInitOptions,
+  OpenShartInitOptions,
   ClassifiedStoreOptions,
-} from './core/engram.js';
+} from './core/openshart.js';
 export type {
-  EngramOptions,
+  OpenShartOptions,
   MemoryId,
   FragmentId,
   EncryptedFragment,

@@ -20,7 +20,7 @@ export interface PostgresOptions {
   connectionString: string;
   /** Connection pool size. Default: 10 */
   poolSize?: number;
-  /** Schema name. Default: 'engram' */
+  /** Schema name. Default: 'openshart' */
   schema?: string;
   /** Run migrations on init. Default: true */
   autoMigrate?: boolean;
@@ -39,7 +39,7 @@ export class PostgresBackend implements StorageBackend {
   private readonly options: Required<PostgresOptions>;
 
   constructor(options: PostgresOptions) {
-    const schema = options.schema ?? 'engram';
+    const schema = options.schema ?? 'openshart';
 
     // P0 fix: Validate schema name against allowlist to prevent SQL injection
     if (!/^[a-z_][a-z0-9_]*$/.test(schema)) {
