@@ -2,27 +2,21 @@
  * Engram — Enterprise-grade encrypted memory framework for AI agents.
  *
  * @packageDocumentation
- *
- * @example
- * ```typescript
- * import { Engram, MemoryBackend, PIILevel, Role } from 'engram';
- * import { randomBytes } from 'node:crypto';
- *
- * const engram = await Engram.init({
- *   storage: new MemoryBackend(),
- *   encryptionKey: randomBytes(32),
- * });
- *
- * const { id } = await engram.store('Sensitive data here', { tags: ['test'] });
- * const results = await engram.search('sensitive');
- * const memory = await engram.recall(id);
- * await engram.forget(id);
- * await engram.close();
- * ```
  */
 
 // Core
-export { Engram, EngramNotFoundError, EngramExpiredError, EngramReconstructionError, EngramAccessDeniedError } from './core/engram.js';
+export {
+  Engram,
+  EngramNotFoundError,
+  EngramExpiredError,
+  EngramReconstructionError,
+  EngramAccessDeniedError,
+} from './core/engram.js';
+export type {
+  SecurityLevel,
+  EngramInitOptions,
+  ClassifiedStoreOptions,
+} from './core/engram.js';
 export type {
   EngramOptions,
   MemoryId,
@@ -81,6 +75,96 @@ export { DepartmentManager } from './hierarchy/departments.js';
 export { AccessController } from './hierarchy/access-control.js';
 export { KeyChain } from './hierarchy/key-chain.js';
 export { ContextFlowManager } from './hierarchy/context-flow.js';
+
+// Classification (Government)
+export {
+  Classification,
+  CLASSIFICATION_LEVEL,
+  KNOWN_COMPARTMENTS,
+  hasClearanceFor,
+  hasCompartmentAccess,
+  bellLaPadulaReadCheck,
+  bellLaPadulaWriteCheck,
+  checkClassifiedAccess,
+  generatePortionMarking,
+} from './hierarchy/classification.js';
+export type {
+  SCICompartment,
+  CompartmentAccess,
+  ClassifiedMemoryMeta,
+  ClearanceProfile,
+} from './hierarchy/classification.js';
+
+// ChainLock
+export {
+  ChainLockProtocol,
+  ChainLockError,
+  generateSequence,
+  encryptSequence,
+  decryptSequence,
+  validateSequence,
+  rotateSequence,
+  BreachDetector,
+  BreachEventType,
+  generateSessionNonce,
+  produceChainToken,
+  verifyChainToken,
+  wipeChainToken,
+  wipeSessionNonce,
+  createTemporalConfig,
+  signTimestamp,
+  verifyTimestamp,
+  checkStepWindow,
+  checkTotalCeiling,
+} from './chainlock/index.js';
+export type {
+  ChainLockConfig,
+  ChainLockRecallResult,
+  EncryptedSequence,
+  TemporalConfig,
+  SignedTimestamp,
+  WindowCheckResult,
+  ChainToken,
+  BreachEvent,
+  BreachDetectionConfig,
+} from './chainlock/index.js';
+
+// Crypto (FIPS)
+export {
+  enableFIPS,
+  disableFIPS,
+  isFIPSEnabled,
+  validateKeyEntropy,
+  fipsEncrypt,
+  fipsDecrypt,
+  fipsHmac,
+  fipsHkdf,
+  fipsRandomBytes,
+  runSelfTests,
+  FIPSError,
+} from './crypto/index.js';
+
+// Key Management
+export {
+  KeyRotationManager,
+  createEscrow,
+  recoverFromEscrow,
+  secureDestroy,
+  verifyDestruction,
+  secureDestroyAll,
+  SecureBuffer,
+  SoftwareHSMProvider,
+} from './keys/index.js';
+export type {
+  RotationEvent,
+  KeyVersion,
+  EscrowShare,
+  EscrowConfig,
+  DestructionVerification,
+  HSMProvider,
+  KeyHandle,
+  AttestationResult,
+} from './keys/index.js';
 
 // Compliance
 export { cryptographicErase, verifyErasure } from './compliance/gdpr.js';

@@ -35,15 +35,21 @@ export async function deriveFragmentKey(
   return Buffer.from(derived);
 }
 
+/** Fixed application salt for search key derivation (P0 fix: non-empty HKDF salt) */
+const SEARCH_KEY_SALT = Buffer.from('engram-search-key-salt-v1', 'utf-8');
+
+/** Fixed application salt for tag key derivation (P0 fix: non-empty HKDF salt) */
+const TAG_KEY_SALT = Buffer.from('engram-tag-key-salt-v1', 'utf-8');
+
 /** Derive the search key from master key */
 export async function deriveSearchKey(masterKey: Buffer): Promise<Buffer> {
-  const derived = await hkdfAsync('sha256', masterKey, Buffer.alloc(0), SEARCH_KEY_INFO, 32);
+  const derived = await hkdfAsync('sha256', masterKey, SEARCH_KEY_SALT, SEARCH_KEY_INFO, 32);
   return Buffer.from(derived);
 }
 
 /** Derive the tag encryption key from master key */
 export async function deriveTagKey(masterKey: Buffer): Promise<Buffer> {
-  const derived = await hkdfAsync('sha256', masterKey, Buffer.alloc(0), TAG_KEY_INFO, 32);
+  const derived = await hkdfAsync('sha256', masterKey, TAG_KEY_SALT, TAG_KEY_INFO, 32);
   return Buffer.from(derived);
 }
 
