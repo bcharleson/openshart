@@ -39,10 +39,17 @@ export class PostgresBackend implements StorageBackend {
   private readonly options: Required<PostgresOptions>;
 
   constructor(options: PostgresOptions) {
+    const schema = options.schema ?? 'engram';
+
+    // P0 fix: Validate schema name against allowlist to prevent SQL injection
+    if (!/^[a-z_][a-z0-9_]*$/.test(schema)) {
+      throw new Error(`Invalid schema name: '${schema}'. Must match [a-z_][a-z0-9_]*`);
+    }
+
     this.options = {
       connectionString: options.connectionString,
       poolSize: options.poolSize ?? 10,
-      schema: options.schema ?? 'engram',
+      schema,
       autoMigrate: options.autoMigrate ?? true,
     };
   }

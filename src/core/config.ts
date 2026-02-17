@@ -58,6 +58,19 @@ export function validateOptions(options: EngramOptions): void {
   if (!options.encryptionKey || options.encryptionKey.length !== 32) {
     throw new Error('Engram: encryptionKey must be exactly 32 bytes (256 bits)');
   }
+
+  // P0 fix: Validate key entropy — reject obviously weak keys
+  const key = options.encryptionKey;
+  if (key.every(b => b === 0)) {
+    throw new Error('Engram: encryption key has zero entropy (all zeros)');
+  }
+  if (key.every(b => b === key[0])) {
+    throw new Error('Engram: encryption key has minimal entropy (all same byte)');
+  }
+  const uniqueBytes = new Set(key).size;
+  if (uniqueBytes < 8) {
+    throw new Error(`Engram: encryption key has insufficient entropy (only ${uniqueBytes} unique bytes)`);
+  }
 }
 
 /** Role hierarchy check: does `actor` have at least `required` clearance? */
