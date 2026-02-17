@@ -317,6 +317,27 @@ A: The classification model, access control, and compartmentalization are archit
 **Q: My CISO asked about the name.**
 A: Tell them it stands for **Open S**ecure **H**ierarchical **A**gent **R**ecall & **T**okenization. That's not true, but it works in a slide deck.
 
+**Q: What happens if there's a security breach?**
+A: The attacker gets useless encrypted fragments and you get to say "good thing we used OpenShart" in the incident report.
+
+**Q: How do I explain this to my board of directors?**
+A: "We've implemented enterprise-grade cryptographic memory fragmentation with temporal sequence locking." Then hope nobody Googles the npm package name.
+
+**Q: Can I put this on my resume?**
+A: "Led implementation of OpenShart across the organization" is technically accurate and a great conversation starter.
+
+**Q: Our compliance team flagged the package name.**
+A: Show them the Shamir's Secret Sharing implementation, the FIPS compliance mode, and the Bell-LaPadula access control. Then watch them slowly nod and pretend the name doesn't bother them.
+
+**Q: Is there an enterprise version with a different name?**
+A: No. The security is the same whether you call it OpenShart or "Open Secure Hierarchical Agent Recall & Tokenization." We just prefer honesty.
+
+**Q: My PR adding OpenShart as a dependency was rejected.**
+A: `npm install openshart` hits different in a code review. We recommend adding it on a Friday afternoon.
+
+**Q: I ran `npm install openshart` and my coworker saw my screen.**
+A: You're welcome. That's a core memory now.
+
 ## Contributing
 
 ```bash
