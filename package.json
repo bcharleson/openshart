@@ -29,8 +29,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:pg": "vitest run test/postgres.integration.test.ts",
+    "test:distributed": "tsx scripts/distributed-test.ts",
+    "validate": "tsx scripts/validate.ts",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run lint && npm test && npm run build"
   },
   "keywords": [
     "ai",
@@ -66,6 +70,8 @@
     "@types/node": "^22.0.0",
     "@types/pg": "^8.16.0",
     "better-sqlite3": "^11.0.0",
+    "pg": "^8.16.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

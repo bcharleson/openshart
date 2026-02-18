@@ -8,3 +8,4 @@ dist/
 coverage/
 .DS_Store
 *.tgz
+OPENSHART_SECURITY_ASSESSMENT.md

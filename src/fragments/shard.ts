@@ -27,7 +27,7 @@ const LOG_TABLE = new Uint8Array(256);
   for (let i = 0; i < 255; i++) {
     EXP_TABLE[i] = x;
     LOG_TABLE[x] = i;
-    x = x ^ gf256MulNoTable(x, 3);
+    x = gf256MulNoTable(x, 3);
   }
   // Wrap around for convenience
   for (let i = 255; i < 512; i++) {
