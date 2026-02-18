@@ -8,12 +8,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue" alt="TypeScript"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-20%2B-green" alt="Node.js"></a>
-  <a href="https://csrc.nist.gov/publications/detail/fips/140/2/final"><img src="https://img.shields.io/badge/FIPS_140--2-Ready-green" alt="FIPS Ready"></a>
-  <a href="https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"><img src="https://img.shields.io/badge/SOC2-Compliant-blue" alt="SOC2"></a>
-  <a href="https://www.hhs.gov/hipaa"><img src="https://img.shields.io/badge/HIPAA-Compliant-blue" alt="HIPAA"></a>
-  <a href="https://www.fedramp.gov/"><img src="https://img.shields.io/badge/FedRAMP-Ready-green" alt="FedRAMP Ready"></a>
-  <img src="https://img.shields.io/badge/Government_Classified-TS%2FSCI_Ready-critical" alt="TS/SCI Ready">
-  <img src="https://img.shields.io/badge/Bell--LaPadula-Enforced-red" alt="Bell-LaPadula">
+  <a href="https://csrc.nist.gov/publications/detail/fips/140/2/final"><img src="https://img.shields.io/badge/FIPS_140--2-Algorithms_Used-yellowgreen" alt="FIPS Algorithms"></a>
+  <a href="https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"><img src="https://img.shields.io/badge/SOC2-Designed_For-blue" alt="SOC2"></a>
+  <a href="https://www.hhs.gov/hipaa"><img src="https://img.shields.io/badge/HIPAA-Designed_For-blue" alt="HIPAA"></a>
+  <img src="https://img.shields.io/badge/Bell--LaPadula-Implemented-red" alt="Bell-LaPadula">
+  <img src="https://img.shields.io/badge/64_Tests-Passing-brightgreen" alt="Tests Passing">
   <img src="https://img.shields.io/badge/💩-Enterprise_Grade-gold" alt="Enterprise Grade">
 </p>
 
@@ -49,7 +48,7 @@ The name is intentional. The security is not a joke.
 | **`standard`** | AES-256-GCM, Shamir fragmentation, PII detection, audit log |
 | **`enterprise`** | + RBAC, department isolation, key rotation, SOC2 controls |
 | **`government`** | + ChainLock, FIPS mode, classification levels, Bell-LaPadula, compartments |
-| **`classified`** | + TS/SCI compartments, two-person integrity, air-gap ready, canary tokens |
+| **`classified`** | + TS/SCI compartments, increased fragmentation (5-of-8), Bell-LaPadula strict enforcement |
 
 ## Quick Start
 
@@ -92,7 +91,7 @@ await shart.close();
 
 ## ⛓️ ChainLock — Temporal Sequence Lock
 
-ChainLock is OpenShart's novel security primitive. Fragments must be decrypted in a cryptographically random sequence, within strict time windows, with chain tokens linking each step.
+ChainLock is OpenShart's composite security layer for high-security recall operations. Fragments must be decrypted in a cryptographically random sequence, within strict time windows, with HMAC chain tokens linking each step. It combines known techniques (hash chains, temporal windows, breach detection) into a defense-in-depth layer over the core Shamir + AES-GCM pipeline.
 
 ```
 Recall Request
@@ -124,10 +123,10 @@ Recall Request
 ```
 
 **Why it matters:**
-- Stolen fragments are **useless** without the sequence, timing, and chain tokens
+- Stolen fragments are already **useless** without the master key (AES-256-GCM). ChainLock adds **API-level friction** against automated extraction by anyone with key access
 - Automated attacks **detected** via timing analysis (uniform step durations = bot)
 - Replay attacks **prevented** — sequence rotates after every successful recall
-- Breach lockdown — configurable failure threshold triggers lockdown
+- Breach lockdown — configurable failure threshold triggers account lockdown
 
 ## Architecture
 
@@ -175,7 +174,7 @@ Recall Request
 
 ## Government Classification
 
-OpenShart supports the full US government classification hierarchy with cryptographic enforcement:
+OpenShart supports the full US government classification hierarchy with policy-level enforcement (Bell-LaPadula MAC). Note: this provides application-level access control, not cryptographically-bound compartmentalization. Formal government certification (FedRAMP, Common Criteria) requires third-party assessment beyond this library.
 
 ```typescript
 import { Classification, checkClassifiedAccess } from 'openshart';
@@ -244,26 +243,27 @@ await rotator.rotateAll(oldKey, newKey);
 
 ## Security Model
 
-| Threat | Mitigation |
-|--------|-----------|
-| Database breach | Shamir's SSS + AES-256-GCM + ChainLock |
-| Automated extraction | ChainLock timing analysis detects bots |
-| Replay attacks | Sequence rotates after every recall |
-| Brute force | Exponential backoff + lockdown |
-| Insider threat | Bell-LaPadula MAC + compartmentalization |
-| Key compromise | Key rotation + HSM-ready + Shamir escrow |
-| Quantum (future) | Architecture ready for ML-KEM-1024 hybrid |
+| Threat | Mitigation | Strength |
+|--------|-----------|----------|
+| Database breach | Shamir's SSS + AES-256-GCM — no single fragment is usable | Strong (cryptographic) |
+| Automated extraction | ChainLock timing analysis + breach lockdown | Moderate (API-level) |
+| Replay attacks | ChainLock sequence rotates after every recall | Moderate (API-level) |
+| Brute force | Exponential backoff + account lockdown | Moderate (rate limiting) |
+| Insider threat | Bell-LaPadula MAC + department isolation | Moderate (policy-level) |
+| Key compromise | Key rotation + Shamir escrow | Strong (re-encryption) |
+| PII exposure | Auto-detection + increased fragmentation | Moderate (regex-based, US patterns) |
 
 ## Compliance
 
-| Framework | Status |
-|-----------|--------|
-| **SOC2 Type II** | ✅ Compliant |
-| **HIPAA** | ✅ Compliant |
-| **GDPR** | ✅ Compliant — Article 17 cryptographic erasure |
-| **FIPS 140-2** | 🟡 Ready — approved algorithms, awaiting validated module |
-| **FedRAMP** | 🟡 Ready — NIST 800-53 controls implemented |
-| **NIST 800-53** | 🟡 Partial — AC, AU, SC, SI families |
+| Framework | Status | Notes |
+|-----------|--------|-------|
+| **SOC2 Type II** | 🟢 Designed for | Technical controls in place; organizational audit required for certification |
+| **HIPAA** | 🟢 Designed for | PHI detection (regex-based, US patterns), encryption, audit logging; BAA and administrative controls not included |
+| **GDPR** | 🟢 Designed for | Article 17 cryptographic erasure with verification; data residency controls not included |
+| **FIPS 140-2** | 🟡 Algorithms used | AES-256-GCM, HMAC-SHA256, HKDF-SHA256 are FIPS-approved; Node.js `crypto` is not a FIPS-validated module |
+| **NIST 800-53** | 🟡 Partial | AC, AU, SC, SI, MP families partially covered (~35%); see [SECURITY_AUDIT.md](SECURITY_AUDIT.md) |
+
+> **Important:** Compliance frameworks like SOC2 and HIPAA are organizational obligations, not software properties. OpenShart provides the technical building blocks (encryption, access control, audit logging, erasure) but actual compliance requires organizational policies, third-party audits, and administrative controls beyond any library. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for the full assessment.
 
 ## Storage Backends
 
@@ -306,13 +306,13 @@ await rotator.rotateAll(oldKey, newKey);
 A: Yes, the name is intentional. The security is not a joke. OpenShart implements AES-256-GCM, Shamir's Secret Sharing, Bell-LaPadula mandatory access control, FIPS-ready cryptography, and government classification with compartmentalization. The absurdity of the name is inversely proportional to the seriousness of the security.
 
 **Q: Can I use this in production?**
-A: Yes. OpenShart is designed for production use in environments ranging from standard SaaS to classified government systems. SOC2, HIPAA, and GDPR compliant by design.
+A: Yes, for commercial/enterprise use cases. OpenShart uses standard, well-established cryptographic primitives (AES-256-GCM, Shamir's SSS, HKDF, HMAC-SHA256) and has 64 unit tests with CI. It is designed to support SOC2, HIPAA, and GDPR compliance requirements, though formal certification requires organizational controls beyond this library. Not certified for government classified systems.
 
 **Q: Why not just use a normal database with encryption?**
 A: Because a database breach exposes everything. OpenShart fragments data using Shamir's Secret Sharing — no single storage location holds a complete memory. Even with full database access, an attacker gets meaningless encrypted shards.
 
 **Q: Does it really support TS/SCI?**
-A: The classification model, access control, and compartmentalization are architecturally complete. Formal certification (FedRAMP, Common Criteria) requires third-party assessment. The crypto is real. The access control is real. The name is... what it is.
+A: The classification model and Bell-LaPadula access control are implemented at the application layer. The crypto primitives are real and correctly implemented. However, actual government TS/SCI deployment requires FIPS-validated cryptographic modules, HSM-backed keys, formal 3PAO assessment, and organizational accreditation — none of which this library provides. Think of it as a solid foundation, not a finished government product.
 
 **Q: My CISO asked about the name.**
 A: Tell them it stands for **Open S**ecure **H**ierarchical **A**gent **R**ecall & **T**okenization. That's not true, but it works in a slide deck.
@@ -338,13 +338,26 @@ A: `npm install openshart` hits different in a code review. We recommend adding 
 **Q: I ran `npm install openshart` and my coworker saw my screen.**
 A: You're welcome. That's a core memory now.
 
+## Testing
+
+64 tests across 7 suites verify the full cryptographic pipeline. CI runs on Node 20 and 22.
+
+```bash
+npm test              # 64 unit tests (in-memory backend)
+npm run validate      # Quick 13-check end-to-end validation
+npm run test:pg       # Postgres integration (requires OPENSHART_PG_URL)
+npm run test:distributed  # Multi-node distributed test (requires Postgres + shared key)
+```
+
+See [TESTING.md](TESTING.md) for the full testing guide including distributed multi-machine testing.
+
 ## Contributing
 
 ```bash
 git clone https://github.com/bcharleson/openshart.git
 cd openshart
 npm install
-npm test
+npm test              # Should see 64 tests passing
 ```
 
 Security vulnerabilities: **Do not open a public issue.** Email security@openshart.dev.

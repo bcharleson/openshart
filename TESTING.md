@@ -11,7 +11,7 @@ npm install
 npm test
 ```
 
-You should see **64 tests passing** across 6 test suites. If all pass, the core cryptographic pipeline (Shamir's Secret Sharing, AES-256-GCM, HKDF key derivation, searchable encryption) is working correctly on your machine.
+You should see **64 tests passing** across 6 unit test suites (the 7th suite, Postgres integration, auto-skips without `OPENSHART_PG_URL`). If all pass, the core cryptographic pipeline (Shamir's Secret Sharing, AES-256-GCM, HKDF key derivation, searchable encryption) is working correctly on your machine.
 
 ## Test Suites
 
@@ -28,7 +28,8 @@ You should see **64 tests passing** across 6 test suites. If all pass, the core 
 ## Available Commands
 
 ```bash
-npm test              # Run all unit tests (in-memory backend)
+npm test              # Run all unit tests — 64 tests, in-memory backend
+npm run validate      # Quick 13-check end-to-end validation
 npm run test:watch    # Watch mode — re-runs on file changes
 npm run test:coverage # Run with coverage report
 npm run test:pg       # Run Postgres integration tests (requires OPENSHART_PG_URL)
