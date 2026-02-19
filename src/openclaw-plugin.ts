@@ -1,3 +1,19 @@
+// openclaw-plugin.ts — OpenShart OpenClaw Plugin
+//
+// FIXES:
+// 1. execute() now returns AgentToolResult format ({ content: [{type, text}], details })
+//    instead of plain strings. OpenClaw's agent loop calls .filter() on result.content,
+//    so returning a plain string causes "Cannot read properties of undefined (reading 'filter')".
+// 2. Execute return types updated from Promise<string> to proper object type.
+//
+// OPENCLAW PLUGIN REQUIREMENTS (for future reference):
+// - register() must be synchronous (OpenClaw does NOT await it)
+// - execute() must return { content: [{type: "text", text: "..."}], details?: ... }
+// - package.json must use nested "openclaw": { "extensions": [...] }, NOT dotted key
+// - openclaw.plugin.json must be copied to dist/ during build
+// - Agent config needs tools.alsoAllow: ["openshart"] or tools won't be available
+// - Agent config needs plugins.slots.memory: "openshart" to disable memory-core
+
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { OpenShart, type OpenShartInitOptions } from './core/openshart.js';
@@ -41,6 +57,27 @@ export interface OpenClawMemoryProvider {
   close(): Promise<void>;
 }
 
+/**
+ * OpenClaw AgentToolResult format.
+ * Plugin tool execute() MUST return this shape — NOT a plain string.
+ * OpenClaw's agent loop accesses result.content and calls .filter() on it.
+ * Returning a plain string makes result.content undefined, which crashes.
+ */
+interface ToolResult {
+  content: Array<{ type: string; text: string }>;
+  details?: unknown;
+}
+
+/**
+ * Wrap a payload into the AgentToolResult format expected by OpenClaw.
+ */
+function toolResult(payload: unknown): ToolResult {
+  return {
+    content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
+    details: payload,
+  };
+}
+
 const OPENCLAW_KEY_ENV = 'OPENSHART_ENCRYPTION_KEY';
 
 function parseConfigEncryptionKey(config: OpenClawPluginConfig): Buffer {
@@ -52,10 +89,8 @@ function parseConfigEncryptionKey(config: OpenClawPluginConfig): Buffer {
           'Set config.encryptionKey or OPENSHART_ENCRYPTION_KEY in the environment.',
       );
     }
-
     return randomBytes(32);
   }
-
   if (config.encryptionKeyEncoding === 'base64') {
     const parsed = Buffer.from(raw, 'base64');
     if (parsed.length !== 32) {
@@ -63,7 +98,6 @@ function parseConfigEncryptionKey(config: OpenClawPluginConfig): Buffer {
     }
     return parsed;
   }
-
   const parsed = Buffer.from(raw, 'hex');
   if (parsed.length !== 32) {
     throw new Error('OpenShart encryption key must be exactly 64 hex characters.');
@@ -95,7 +129,6 @@ export class OpenShartMemoryProvider implements OpenClawMemoryProvider {
     if (!this.openshart) {
       throw new Error('OpenShartMemoryProvider not initialized. Call init(config) first.');
     }
-
     const tags = this.toStringArray(metadata?.tags);
     const result = await this.openshart.store(content, { tags });
     return result.id;
@@ -105,11 +138,9 @@ export class OpenShartMemoryProvider implements OpenClawMemoryProvider {
     if (!this.openshart) {
       throw new Error('OpenShartMemoryProvider not initialized. Call init(config) first.');
     }
-
     const searchResult: SearchResult = await this.openshart.search(query, {
       limit,
     });
-
     return Promise.all(
       searchResult.memories.map(async (meta) => {
         const memory = await this.openshart!.recall(meta.id);
@@ -126,7 +157,6 @@ export class OpenShartMemoryProvider implements OpenClawMemoryProvider {
     if (!this.openshart) {
       throw new Error('OpenShartMemoryProvider not initialized. Call init(config) first.');
     }
-
     await this.openshart.forget(memoryId(id));
   }
 
@@ -134,7 +164,6 @@ export class OpenShartMemoryProvider implements OpenClawMemoryProvider {
     if (!this.openshart) {
       throw new Error('OpenShartMemoryProvider not initialized. Call init(config) first.');
     }
-
     const memory = await this.openshart.recall(memoryId(id));
     return memory.content;
   }
@@ -148,7 +177,6 @@ export class OpenShartMemoryProvider implements OpenClawMemoryProvider {
     if (!Array.isArray(value)) {
       return [];
     }
-
     return value.filter((item): item is string => typeof item === 'string');
   }
 }
@@ -161,8 +189,8 @@ const plugin = {
   register: (api: any): void => {
     const provider = new OpenShartMemoryProvider();
     const config = (api?.pluginConfig ?? {}) as OpenClawPluginConfig;
-    let initialized: Promise<void> | null = null;
 
+    let initialized: Promise<void> | null = null;
     const ensureInit = (): Promise<void> => {
       if (!initialized) {
         initialized = provider.init(config);
@@ -189,16 +217,17 @@ const plugin = {
           },
           required: ['query'],
         },
-        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<ToolResult> => {
           await ensureInit();
           const query = typeof params.query === 'string' ? params.query : '';
           const maxResults =
-            typeof params.maxResults === 'number' && Number.isFinite(params.maxResults) && params.maxResults > 0
+            typeof params.maxResults === 'number' &&
+            Number.isFinite(params.maxResults) &&
+            params.maxResults > 0
               ? Math.floor(params.maxResults)
               : 10;
-
           const result = await provider.search(query, maxResults);
-          return JSON.stringify({
+          return toolResult({
             results: result,
             provider: 'openshart',
             encrypted: true,
@@ -223,18 +252,17 @@ const plugin = {
           },
           required: ['id'],
         },
-        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<ToolResult> => {
           await ensureInit();
           const id = typeof params.id === 'string' ? params.id : '';
           if (!id) {
             throw new Error('memory_get requires id');
           }
-
           const content = await provider.get(id);
           if (!content) {
             throw new Error(`Memory not found: ${id}`);
           }
-          return JSON.stringify({ id, content });
+          return toolResult({ id, content });
         },
       }),
       { names: ['memory_get'] },
@@ -259,7 +287,7 @@ const plugin = {
           },
           required: ['content'],
         },
-        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<ToolResult> => {
           await ensureInit();
           const content = typeof params.content === 'string' ? params.content : '';
           const metadata =
@@ -267,7 +295,7 @@ const plugin = {
               ? (params.metadata as Record<string, unknown>)
               : undefined;
           const memoryId = await provider.store(content, metadata);
-          return JSON.stringify({ id: memoryId });
+          return toolResult({ id: memoryId, stored: true });
         },
       }),
       { names: ['memory_store'] },
@@ -288,15 +316,14 @@ const plugin = {
           },
           required: ['id'],
         },
-        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<ToolResult> => {
           await ensureInit();
           const id = typeof params.id === 'string' ? params.id : '';
           if (!id) {
             throw new Error('memory_forget requires id');
           }
-
           await provider.forget(id);
-          return JSON.stringify({ success: true, id });
+          return toolResult({ success: true, id });
         },
       }),
       { names: ['memory_forget'] },
