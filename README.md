@@ -376,7 +376,7 @@ MIT — see [LICENSE](LICENSE).
 
 OpenClaw integration is supported by:
 
-- `openclaw.extensions` in `package.json` set to `["./dist/openclaw-plugin.js"]`
+- `openclaw.extensions` in `package.json` (inside `openclaw`) set to `["./dist/openclaw-plugin.js"]`
 - `openclaw.plugin.json` at the package root
 - `dist/openclaw-plugin.js` as the plugin entry point for OpenClaw
 

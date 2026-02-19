@@ -4,9 +4,11 @@
   "description": "Enterprise-grade encrypted agent memory. If it leaks, you're going to OpenShart yourself.",
   "type": "module",
   "main": "./dist/index.js",
-  "openclaw.extensions": [
-    "./dist/openclaw-plugin.js"
-  ],
+  "openclaw": {
+    "extensions": [
+      "./dist/openclaw-plugin.js"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bcharleson/openshart.git"
@@ -29,7 +31,7 @@
     "openclaw.plugin.json"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp openclaw.plugin.json dist/openclaw.plugin.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
