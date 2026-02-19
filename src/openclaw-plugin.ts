@@ -172,16 +172,37 @@ const plugin = {
 
     api.registerTool(
       () => ({
-        execute: async (input: { query?: unknown; limit?: unknown }): Promise<string> => {
+        name: 'memory_search',
+        label: 'Memory Search (OpenShart)',
+        description: 'Search encrypted agent memory using HMAC tokens.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query',
+            },
+            maxResults: {
+              type: 'number',
+              description: 'Max results to return',
+            },
+          },
+          required: ['query'],
+        },
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
           await ensureInit();
-          const query = typeof input.query === 'string' ? input.query : '';
-          const limit =
-            typeof input.limit === 'number' && Number.isFinite(input.limit) && input.limit > 0
-              ? Math.floor(input.limit)
+          const query = typeof params.query === 'string' ? params.query : '';
+          const maxResults =
+            typeof params.maxResults === 'number' && Number.isFinite(params.maxResults) && params.maxResults > 0
+              ? Math.floor(params.maxResults)
               : 10;
 
-          const result = await provider.search(query, limit);
-          return JSON.stringify(result);
+          const result = await provider.search(query, maxResults);
+          return JSON.stringify({
+            results: result,
+            provider: 'openshart',
+            encrypted: true,
+          });
         },
       }),
       { names: ['memory_search'] },
@@ -189,9 +210,22 @@ const plugin = {
 
     api.registerTool(
       () => ({
-        execute: async (input: { id?: unknown }): Promise<string> => {
+        name: 'memory_get',
+        label: 'Memory Get (OpenShart)',
+        description: 'Retrieve decrypted memory content by memory id.',
+        parameters: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Memory id',
+            },
+          },
+          required: ['id'],
+        },
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
           await ensureInit();
-          const id = typeof input.id === 'string' ? input.id : '';
+          const id = typeof params.id === 'string' ? params.id : '';
           if (!id) {
             throw new Error('memory_get requires id');
           }
@@ -208,15 +242,29 @@ const plugin = {
 
     api.registerTool(
       () => ({
-        execute: async (input: {
-          content?: unknown;
-          metadata?: unknown;
-        }): Promise<string> => {
+        name: 'memory_store',
+        label: 'Memory Store (OpenShart)',
+        description: 'Store content in encrypted memory.',
+        parameters: {
+          type: 'object',
+          properties: {
+            content: {
+              type: 'string',
+              description: 'Raw content to store',
+            },
+            metadata: {
+              type: 'object',
+              description: 'Optional metadata',
+            },
+          },
+          required: ['content'],
+        },
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
           await ensureInit();
-          const content = typeof input.content === 'string' ? input.content : '';
+          const content = typeof params.content === 'string' ? params.content : '';
           const metadata =
-            typeof input.metadata === 'object' && input.metadata !== null
-              ? (input.metadata as Record<string, unknown>)
+            typeof params.metadata === 'object' && params.metadata !== null
+              ? (params.metadata as Record<string, unknown>)
               : undefined;
           const memoryId = await provider.store(content, metadata);
           return JSON.stringify({ id: memoryId });
@@ -227,9 +275,22 @@ const plugin = {
 
     api.registerTool(
       () => ({
-        execute: async (input: { id?: unknown }): Promise<string> => {
+        name: 'memory_forget',
+        label: 'Memory Forget (OpenShart)',
+        description: 'Forget and erase memory content by id.',
+        parameters: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Memory id',
+            },
+          },
+          required: ['id'],
+        },
+        execute: async (_toolCallId: string, params: Record<string, unknown>): Promise<string> => {
           await ensureInit();
-          const id = typeof input.id === 'string' ? input.id : '';
+          const id = typeof params.id === 'string' ? params.id : '';
           if (!id) {
             throw new Error('memory_forget requires id');
           }
