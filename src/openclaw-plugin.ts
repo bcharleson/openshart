@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { join } from 'node:path';
 import { OpenShart, type OpenShartInitOptions } from './core/openshart.js';
 import { MemoryBackend } from './storage/memory.js';
 import { SQLiteBackend } from './storage/sqlite.js';
@@ -76,7 +77,7 @@ export class OpenShartMemoryProvider implements OpenClawMemoryProvider {
   async init(config: OpenClawPluginConfig = {}): Promise<void> {
     const key = parseConfigEncryptionKey(config);
     const backend = config.useSQLite
-      ? new SQLiteBackend({ path: config.storagePath })
+      ? new SQLiteBackend({ path: join(config.storagePath || '', 'openshart.db') })
       : new MemoryBackend();
 
     const options: OpenShartInitOptions = {
@@ -157,14 +158,22 @@ const plugin = {
   name: 'OpenShart Encrypted Memory',
   version: '0.1.0',
   kind: 'memory',
-  register: async (api: any): Promise<void> => {
+  register: (api: any): void => {
     const provider = new OpenShartMemoryProvider();
     const config = (api?.pluginConfig ?? {}) as OpenClawPluginConfig;
-    await provider.init(config);
+    let initialized: Promise<void> | null = null;
+
+    const ensureInit = (): Promise<void> => {
+      if (!initialized) {
+        initialized = provider.init(config);
+      }
+      return initialized;
+    };
 
     api.registerTool(
       () => ({
         execute: async (input: { query?: unknown; limit?: unknown }): Promise<string> => {
+          await ensureInit();
           const query = typeof input.query === 'string' ? input.query : '';
           const limit =
             typeof input.limit === 'number' && Number.isFinite(input.limit) && input.limit > 0
@@ -181,6 +190,7 @@ const plugin = {
     api.registerTool(
       () => ({
         execute: async (input: { id?: unknown }): Promise<string> => {
+          await ensureInit();
           const id = typeof input.id === 'string' ? input.id : '';
           if (!id) {
             throw new Error('memory_get requires id');
@@ -202,6 +212,7 @@ const plugin = {
           content?: unknown;
           metadata?: unknown;
         }): Promise<string> => {
+          await ensureInit();
           const content = typeof input.content === 'string' ? input.content : '';
           const metadata =
             typeof input.metadata === 'object' && input.metadata !== null
@@ -217,6 +228,7 @@ const plugin = {
     api.registerTool(
       () => ({
         execute: async (input: { id?: unknown }): Promise<string> => {
+          await ensureInit();
           const id = typeof input.id === 'string' ? input.id : '';
           if (!id) {
             throw new Error('memory_forget requires id');
@@ -230,7 +242,10 @@ const plugin = {
     );
 
     api.on?.('gateway_stop', async () => {
-      await provider.close();
+      if (initialized) {
+        await initialized;
+        await provider.close();
+      }
     });
   },
 };
