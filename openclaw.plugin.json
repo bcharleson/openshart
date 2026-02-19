@@ -4,5 +4,48 @@
   "version": "0.1.0",
   "kind": "memory",
   "description": "AES-256-GCM encrypted memory with Shamir's Secret Sharing for AI agents.",
-  "entry": "./openclaw-plugin.js"
+  "entry": "./openclaw-plugin.js",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "encryptionKey": {
+        "type": "string",
+        "description": "Hex or base64 encoded 32-byte encryption key"
+      },
+      "encryptionKeyEncoding": {
+        "type": "string",
+        "enum": ["hex", "base64"],
+        "description": "Encoding of the encryption key (default: hex)"
+      },
+      "securityLevel": {
+        "type": "string",
+        "enum": ["standard", "enterprise", "government", "classified"],
+        "description": "Security preset level"
+      },
+      "storagePath": {
+        "type": "string",
+        "description": "Directory path for SQLite database"
+      },
+      "useSQLite": {
+        "type": "boolean",
+        "description": "Use SQLite backend instead of in-memory"
+      },
+      "agentId": {
+        "type": "string",
+        "description": "Agent identifier for audit logging"
+      },
+      "department": {
+        "type": "string",
+        "description": "Department for hierarchical access control"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Default tags applied to all stored entries"
+      }
+    },
+    "additionalProperties": false
+  }
 }
