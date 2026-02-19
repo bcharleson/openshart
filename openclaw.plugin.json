@@ -1,0 +1,30 @@
+{
+  "id": "openshart",
+  "name": "OpenShart Encrypted Memory",
+  "version": "0.1.0",
+  "kind": "memory",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "securityLevel": {
+        "type": "string",
+        "enum": ["standard", "enterprise", "government", "classified"]
+      },
+      "storagePath": {
+        "type": "string"
+      },
+      "useSQLite": {
+        "type": "boolean"
+      },
+      "encryptionKey": {
+        "type": "string",
+        "description": "Hex or base64 encryption key for persistent backends"
+      },
+      "encryptionKeyEncoding": {
+        "type": "string",
+        "enum": ["hex", "base64"]
+      }
+    }
+  }
+}

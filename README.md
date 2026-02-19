@@ -371,3 +371,13 @@ MIT — see [LICENSE](LICENSE).
 <p align="center">
   <strong>OpenShart</strong> — because agent memory should be as secure as the name is unfortunate.
 </p>
+
+## OpenClaw Plugin Integration
+
+OpenClaw integration is supported by:
+
+- `openclaw.extensions` in `package.json` set to `["./dist/openclaw-plugin.js"]`
+- `openclaw.plugin.json` at the package root
+- `dist/openclaw-plugin.js` as the plugin entry point for OpenClaw
+
+For tested install commands and failure-mode notes, see [INSTALL.md](INSTALL.md).

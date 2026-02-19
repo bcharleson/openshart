@@ -67,6 +67,7 @@ export { executeSearch } from './search/query.js';
 // Audit
 export { AuditLogger, computeEntryHash } from './audit/logger.js';
 export { verifyAuditChain } from './audit/chain.js';
+export type { ChainVerificationResult } from './audit/chain.js';
 export { generateComplianceReport, exportAsCSV, exportAsJSONL } from './audit/compliance.js';
 
 // Hierarchy
