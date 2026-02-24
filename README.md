@@ -12,7 +12,7 @@
   <a href="https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"><img src="https://img.shields.io/badge/SOC2-Designed_For-blue" alt="SOC2"></a>
   <a href="https://www.hhs.gov/hipaa"><img src="https://img.shields.io/badge/HIPAA-Designed_For-blue" alt="HIPAA"></a>
   <img src="https://img.shields.io/badge/Bell--LaPadula-Implemented-red" alt="Bell-LaPadula">
-  <img src="https://img.shields.io/badge/64_Tests-Passing-brightgreen" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/69_Tests-Passing-brightgreen" alt="Tests Passing">
   <img src="https://img.shields.io/badge/💩-Enterprise_Grade-gold" alt="Enterprise Grade">
 </p>
 
@@ -40,6 +40,69 @@ The name is intentional. The security is not a joke.
 - 🔑 **FIPS-ready** — approved algorithms, key entropy validation, self-tests
 - 🏥 **HIPAA PHI detection** — Safe Harbor patterns, minimum necessary enforcement
 - 📦 **Zero runtime dependencies** — Node.js `crypto` only
+
+## How It Works
+
+When an AI agent stores a memory through OpenShart, the content never touches disk in readable form. Here is the exact pipeline:
+
+```
+"Patient John Doe, SSN 123-45-6789"
+         │
+         ▼
+┌─── PII Detection ───┐
+│ Scans for:           │
+│ • SSN, credit cards  │
+│ • Email, phone       │  ← auto-detects SSN as CRITICAL PII
+│ • Financial, medical │
+└──────────┬───────────┘
+           ▼
+┌─── Shamir Split ────┐
+│ Breaks content into  │
+│ K-of-N fragments     │  ← e.g., 3-of-5: any 3 can rebuild, but
+│ using secret sharing │     1 or 2 fragments alone are random noise
+└──────────┬───────────┘
+           ▼
+┌─── AES-256-GCM ─────┐
+│ Each fragment gets    │
+│ its own derived key   │  ← per-fragment HKDF key derivation
+│ + authenticated enc.  │     cracking one fragment doesn't help with others
+└──────────┬───────────┘
+           ▼
+┌─── HMAC Indexing ────┐
+│ Search tokens built   │
+│ from HMAC-SHA256      │  ← content searchable WITHOUT decryption
+│ not plaintext         │     the index never contains readable content
+└──────────┬───────────┘
+           ▼
+┌─── Audit Log ────────┐
+│ Hash-chained entry    │
+│ SHA-256 linked to     │  ← tamper-evident: altering any entry
+│ previous entry        │     breaks the chain
+└──────────┬───────────┘
+           ▼
+       Storage
+   (SQLite / Postgres)
+```
+
+**Searching** works without decryption: the query is hashed into HMAC tokens and matched against the index. The search engine never sees plaintext.
+
+**Recalling** reassembles the minimum threshold of fragments, decrypts each with its derived key, and reconstructs the original content. At government+ security levels, the ChainLock protocol enforces a timed sequence with breach detection.
+
+**Forgetting** overwrites each fragment three times (zeros, ones, random bytes per DoD 5220.22-M) before deletion. The cryptographic erasure is verified and audit-logged.
+
+## Why Not Just Encrypt a Database?
+
+A traditional encrypted database (SQLCipher, AWS KMS + DynamoDB, etc.) stores complete records. If the encryption key leaks or the database is breached, every record is exposed at once. OpenShart is fundamentally different because no single storage location ever holds a complete memory.
+
+| Approach | Search while encrypted? | Fragment-based? | PII-aware? | Built for AI agents? |
+|---|---|---|---|---|
+| Encrypted DB (SQLCipher) | No — must decrypt to query | No | No | No |
+| Key-value vault (HashiCorp) | No — key/value only | No | No | No |
+| Cloud KMS + DB (AWS/GCP) | No — envelope encryption | No | No | No |
+| Confidential computing (SGX/SEV) | Yes, needs special hardware | No | No | No |
+| **OpenShart** | **Yes** (HMAC tokens) | **Yes** (Shamir) | **Yes** (auto-detects) | **Yes** (plugin-native) |
+
+The combination of Shamir's Secret Sharing, per-fragment AES-256-GCM, and HMAC-based searchable encryption in a single framework purpose-built for AI agent memory is what makes OpenShart distinct. Each technique is well-established individually; the novelty is composing them into an agent-native memory layer with automatic PII classification that adjusts fragmentation based on content sensitivity.
 
 ## Security Presets
 
@@ -306,7 +369,7 @@ await rotator.rotateAll(oldKey, newKey);
 A: Yes, the name is intentional. The security is not a joke. OpenShart implements AES-256-GCM, Shamir's Secret Sharing, Bell-LaPadula mandatory access control, FIPS-ready cryptography, and government classification with compartmentalization. The absurdity of the name is inversely proportional to the seriousness of the security.
 
 **Q: Can I use this in production?**
-A: Yes, for commercial/enterprise use cases. OpenShart uses standard, well-established cryptographic primitives (AES-256-GCM, Shamir's SSS, HKDF, HMAC-SHA256) and has 64 unit tests with CI. It is designed to support SOC2, HIPAA, and GDPR compliance requirements, though formal certification requires organizational controls beyond this library. Not certified for government classified systems.
+A: Yes, for commercial/enterprise use cases. OpenShart uses standard, well-established cryptographic primitives (AES-256-GCM, Shamir's SSS, HKDF, HMAC-SHA256) and has 69 unit tests with CI. It is designed to support SOC2, HIPAA, and GDPR compliance requirements, though formal certification requires organizational controls beyond this library. Not certified for government classified systems.
 
 **Q: Why not just use a normal database with encryption?**
 A: Because a database breach exposes everything. OpenShart fragments data using Shamir's Secret Sharing — no single storage location holds a complete memory. Even with full database access, an attacker gets meaningless encrypted shards.
@@ -340,10 +403,10 @@ A: You're welcome. That's a core memory now.
 
 ## Testing
 
-64 tests across 7 suites verify the full cryptographic pipeline. CI runs on Node 20 and 22.
+69 tests across 8 suites verify the full cryptographic pipeline. CI runs on Node 20 and 22.
 
 ```bash
-npm test              # 64 unit tests (in-memory backend)
+npm test              # 69 unit tests (in-memory backend)
 npm run validate      # Quick 13-check end-to-end validation
 npm run test:pg       # Postgres integration (requires OPENSHART_PG_URL)
 npm run test:distributed  # Multi-node distributed test (requires Postgres + shared key)
@@ -357,7 +420,7 @@ See [TESTING.md](TESTING.md) for the full testing guide including distributed mu
 git clone https://github.com/bcharleson/openshart.git
 cd openshart
 npm install
-npm test              # Should see 64 tests passing
+npm test              # Should see 69 tests passing
 ```
 
 Security vulnerabilities: **Do not open a public issue.** Email security@openshart.dev.
@@ -371,6 +434,71 @@ MIT — see [LICENSE](LICENSE).
 <p align="center">
   <strong>OpenShart</strong> — because agent memory should be as secure as the name is unfortunate.
 </p>
+
+## Webhook Handler (Strict Contracts)
+
+The `WebhookHandler` wraps all OpenShart operations in a deterministic contract layer for production agent deployments. Every request and response follows a strict envelope format with traceability, validation, and explicit error branching.
+
+```typescript
+import { OpenShart, MemoryBackend, WebhookHandler } from 'openshart';
+import { randomBytes } from 'node:crypto';
+
+const shart = await OpenShart.init({
+  storage: new MemoryBackend(),
+  encryptionKey: randomBytes(32),
+});
+
+const handler = new WebhookHandler(shart, {
+  logger: console,  // pluggable — any { info, warn, error } logger
+});
+
+const response = await handler.handle({
+  action: 'memory_store',
+  request_id: 'req-abc-123',
+  idempotency_key: 'idem-xyz',
+  params: {
+    content: 'Sensitive project details here.',
+    tags: ['project', 'confidential'],
+  },
+});
+
+// Response is always a deterministic envelope:
+// {
+//   status: 'success',
+//   code: 200,
+//   message: 'Memory stored successfully',
+//   request_id: 'req-abc-123',
+//   idempotency_key: 'idem-xyz',
+//   data: { id: 'mem_...', piiLevel: 'NONE', fragmentCount: 3, ... },
+//   timing: {
+//     total_ms: 12,
+//     steps: [
+//       { step: 'validate', duration_ms: 0 },
+//       { step: 'tool:memory_store', duration_ms: 11 },
+//       { step: 'parse_response', duration_ms: 0 }
+//     ]
+//   }
+// }
+```
+
+**Actions:** `memory_store`, `memory_search`, `memory_get`, `memory_forget`
+
+**Response branches:**
+
+| Status | Code | When |
+|--------|------|------|
+| `success` | 200 | Operation completed, data returned |
+| `no_result` | 204 | Search returned zero hits, or memory not found |
+| `validation_error` | 400 | Missing or invalid fields in the request |
+| `upstream_error` | 502 | OpenShart operation threw an unexpected error |
+
+**Guarantees:**
+- Input validated before any tool call executes
+- `request_id` and `idempotency_key` propagated through every response and log entry
+- Tool returns parsed as JSON string before field mapping (no raw object passthrough)
+- Per-step latency tracked in `timing.steps[]`
+- Raw tool errors surfaced in `data.raw_error` for debugging
+- Handler never throws — all errors are captured in the response envelope
 
 ## OpenClaw Plugin Integration
 
