@@ -171,3 +171,17 @@ export type {
 export { cryptographicErase, verifyErasure } from './compliance/gdpr.js';
 export { detectPHI, enforceMinimumNecessary, containsPHI, PHI_PATTERNS } from './compliance/hipaa.js';
 export { runSOC2Checks, generateSOC2Report } from './compliance/soc2.js';
+
+// Webhook (strict contracts)
+export { WebhookHandler, validateRequest, asValidRequest, STATUS_CODES } from './webhook/index.js';
+export type {
+  WebhookRequest,
+  WebhookResponse,
+  WebhookAction,
+  ResponseStatus,
+  StepTiming,
+  TimingInfo,
+  ValidationIssue,
+  WebhookLogger,
+  WebhookHandlerConfig,
+} from './webhook/index.js';
